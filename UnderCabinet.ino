@@ -11,10 +11,10 @@
 #include "solid.h"
 
 //Times are in miliseconds.  60000ms to the minute.
-const static unsigned long gTimeToCooldown = 1000 * 3;        //3 sec
-const static unsigned long gTimeToSave = 1000 * 30;           //30 sec
-const static unsigned long gTimeToIdle = 1000 * 60 * 1;       //1 min
-const static unsigned long gTimeToOff  = 1000 * 60 * 60 * 2;  //2 hr
+const unsigned long gTimeToCooldown = 1000l * 3l;        //3 sec
+const unsigned long gTimeToSave = 1000l * 30l;           //30 sec
+const unsigned long gTimeToIdle = 1000l * 60l * 1l;       //1 min
+const unsigned long gTimeToOff  = 1000l * 60l * 60l * 2l; //2 hr
 
 const short PIN_LED = 6;  //Pin connecting the IN on the LED strip to the CPU board.
 const short NUM_LEDS = 30; //Num LEDS in our array.
@@ -103,6 +103,7 @@ void getButtonStatus() {
     { //Turn off
       //TODO doSave();  //Save if needed.
       turnOff();
+      gMotionActive=false;
     }
     /*
     else if (b == Button::DOUBLECLICK) 
@@ -138,7 +139,7 @@ void getRange()  //Handle the range sensor
   float range = gRanger.getStatus();
   if (gMotionActive)
   {
-    if ((int)abs(gLastRange - range) > 20) //Movement detected.
+    if ((int)abs(gLastRange - range) > 40) //Movement detected.
     {
       gStartTime = millis();
       if (gMode == MODE_PATTERN) //Move back to white light.
@@ -178,7 +179,8 @@ void trimBrightness()
 
 void doTimers()
 {
-  unsigned long elapsed = millis() - gStartTime;
+  unsigned long now = millis();
+  unsigned long elapsed = now - gStartTime;
   
   if ( gTimeToCooldown < elapsed )    //Re-activate movement detect
   {
@@ -197,7 +199,7 @@ void doTimers()
       gMode = MODE_PATTERN;
     }
   }
-  if (gTimeToOff < elapsed) //black out
+  if (gTimeToOff < elapsed and gMode != MODE_OFF) //black out
   {
     turnOff();
   }
@@ -222,6 +224,7 @@ void setup() {
   H_LEDS.begin(); //Initialize communication with LED array.
   H_LEDS.show(); //No values are set so this should be black.
   gMotionActive=false; //Allow motion input time to get average
+  rain.mShiftOdds = 200;
 }
 
 void loop() {
